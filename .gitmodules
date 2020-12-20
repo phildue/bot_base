@@ -7,3 +7,9 @@
 [submodule "src/robopi_sim"]
 	path = src/robopi_sim
 	url = https://github.com/phildue/robopi_sim
+[submodule "src/grid_map"]
+	path = src/grid_map
+	url = https://github.com/jspricke/grid_map.git
+[submodule "src/navigation_layers"]
+	path = src/navigation_layers
+	url = https://github.com/DLu/navigation_layers.git
