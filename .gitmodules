@@ -2,7 +2,7 @@
 	path = src/robopi
 	url = https://github.com/phildue/robopi
 [submodule "src/robopi_low_level_control"]
-	path = src/robopi_low_level_control
+	path = src/robopi_low_level
 	url = https://github.com/phildue/robopi_low_level_control.git
 [submodule "src/robopi_sim"]
 	path = src/robopi_sim
