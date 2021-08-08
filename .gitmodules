@@ -10,3 +10,6 @@
 [submodule "src/navigation_layers"]
 	path = src/navigation_layers
 	url = https://github.com/DLu/navigation_layers.git
+[submodule "navigation_layers"]
+	path = navigation_layers
+	url = https://github.com/DLu/navigation_layers.git

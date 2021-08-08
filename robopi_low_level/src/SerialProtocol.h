@@ -6,7 +6,7 @@
 #define ROBOPI_SERIALPROTOCOL_H
 
 
-#include <CppLinuxSerial/SerialPort.hpp>
+#include "SerialPort.hpp"
 using namespace mn::CppLinuxSerial;
 
 #include <chrono>
