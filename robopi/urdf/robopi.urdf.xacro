@@ -1,0 +1,10 @@
+<robot name="robopi"
+       xmlns:xacro="http://www.ros.org/wiki/xacro"
+       xmlns:xi="http://www.w3.org/2001/XInclude">
+    <xacro:include filename="globals.urdf.xacro" />
+    <xacro:include filename="chassis.urdf.xacro" />
+    <xacro:include filename="wheels.urdf.xacro" />
+    <xacro:include filename="sonar.urdf.xacro" />
+    <xacro:include filename="camera.urdf.xacro" />
+
+</robot>
