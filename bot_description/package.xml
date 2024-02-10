@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>bot_description</name>
+  <version>0.0.0</version>
+  <description>The bot_description package</description>
+
+  <maintainer email="phil@todo.todo">phil</maintainer>
+
+  <license>TODO</license>
+
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <exec_depend>xacro</exec_depend>
+</package>
