@@ -12,10 +12,10 @@ using namespace mn::CppLinuxSerial;
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <list>
 #include <memory>
 #include <string>
 #include <thread>
-
 class SerialProtocol {
 public:
   class ParseError : public std::runtime_error {
@@ -26,7 +26,7 @@ public:
     const std::string _parsedMessage;
   };
 
-  enum class MsgType { UNKNOWN, CMD_VEL, STATE };
+  enum class MsgType { UNKNOWN, CMD_VEL, STATE, Q_STATE };
   struct Message {
   public:
     Message(const std::string &msg);
@@ -62,9 +62,14 @@ public:
     std::string str() const override;
   };
 
-  std::vector<std::shared_ptr<const Message>> _messages;
-  std::vector<std::shared_ptr<const MsgCmdVel>> _messagesCmdVel;
-  std::vector<std::shared_ptr<const MsgState>> _messagesState;
+  struct MsgQueryState : public Message {
+    MsgQueryState(uint64_t t);
+  };
+  
+
+  std::list<std::shared_ptr<const Message>> messages;
+  std::list<std::shared_ptr<const MsgCmdVel>> messagesCmdVel;
+  std::list<std::shared_ptr<const MsgState>> messagesState;
 
   void parse(int nMessages, std::shared_ptr<SerialPort> port);
 

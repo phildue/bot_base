@@ -174,10 +174,12 @@ DifferentialDriveSerialInterface::read(const rclcpp::Time & /*time*/,
     return hardware_interface::return_type::ERROR;
   }
   try {
+    _port->Write(
+        std::make_shared<SerialProtocol::MsgQueryState>(0)->serialStr());
     _serial.parse(1, _port);
 
-    if (!_serial._messagesState.empty()) {
-      auto msg = _serial._messagesState.back();
+    if (!_serial.messagesState.empty()) {
+      auto msg = _serial.messagesState.back();
       _jointVelocity[LEFT] = msg->_stateLeft.angularVelocity;
       _jointVelocity[RIGHT] = msg->_stateRight.angularVelocity;
       _jointPosition[LEFT] = msg->_stateLeft.position;

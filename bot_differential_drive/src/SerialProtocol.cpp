@@ -23,6 +23,8 @@ SerialProtocol::Message::to_string(SerialProtocol::MsgType msgType) {
     return "v";
   case MsgType ::STATE:
     return "S";
+  case MsgType ::Q_STATE:
+    return "Q";
   default:
     return "";
   }
@@ -98,6 +100,14 @@ std::string SerialProtocol::MsgState::str() const {
   return ss.str();
 }
 
+SerialProtocol::MsgQueryState::MsgQueryState(uint64_t t)
+    : Message(MsgType::Q_STATE, t) {
+  std::stringstream ss;
+  ss << to_string(_type) << " " << t << " s"
+     << "\n";
+  _str = ss.str();
+}
+
 void SerialProtocol::parse(int nMessages, std::shared_ptr<SerialPort> port) {
   int nBytes = 0;
   int readMessages = 0;
@@ -109,13 +119,13 @@ void SerialProtocol::parse(int nMessages, std::shared_ptr<SerialPort> port) {
         auto msgType = Message::msgType(raw.substr(0, 1));
         switch (msgType) {
         case MsgType::STATE:
-          _messagesState.push_back(std::make_shared<MsgState>(raw));
+          messagesState.push_back(std::make_shared<MsgState>(raw));
           break;
         case MsgType::CMD_VEL:
-          _messagesCmdVel.push_back(std::make_shared<MsgCmdVel>(raw));
+          messagesCmdVel.push_back(std::make_shared<MsgCmdVel>(raw));
           break;
         default:
-          _messages.push_back(std::make_shared<Message>(raw));
+          messages.push_back(std::make_shared<Message>(raw));
         }
 
         _buffer = std::stringstream();
@@ -140,7 +150,7 @@ std::vector<std::string> SerialProtocol::split(const std::string &s,
 }
 
 void SerialProtocol::clear() {
-  _messages.clear();
-  _messagesState.clear();
-  _messagesCmdVel.clear();
+  messages.clear();
+  messagesState.clear();
+  messagesCmdVel.clear();
 }
