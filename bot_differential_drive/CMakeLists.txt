@@ -30,7 +30,7 @@ tf2
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE "BOT_DIFFERENTIAL_DRIVE_BUILDING_DLL")
 
-pluginlib_export_plugin_description_file(hardware_interface bot_differential_drive.xml)
+pluginlib_export_plugin_description_file(hardware_interface description/bot_differential_drive.xml)
 
 install(DIRECTORY
     launch
@@ -38,6 +38,10 @@ install(DIRECTORY
 
 install(DIRECTORY
   config
+  DESTINATION share/${PROJECT_NAME}/)
+
+  install(DIRECTORY
+  description
   DESTINATION share/${PROJECT_NAME}/)
 
 install(

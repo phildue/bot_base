@@ -27,7 +27,7 @@ def generate_launch_description():
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution(
-                [FindPackageShare("bot_description"), "urdf", "bot.urdf.xacro"]
+                [FindPackageShare("bot_differential_drive"), "description", "bot_differential_drive.urdf.xacro"]
             ),
         ]
     )
@@ -37,7 +37,7 @@ def generate_launch_description():
         [
             FindPackageShare("bot_differential_drive"),
             "config",
-            "controllers.yaml",
+            "controller.yaml",
         ]
     )
 

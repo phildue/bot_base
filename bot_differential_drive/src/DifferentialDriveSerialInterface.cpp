@@ -17,6 +17,7 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
   _wheelNames.resize(2);
   _jointEffort.resize(2);
   _jointPosition.resize(2);
+  _jointVelocity.resize(2);
   _jointVelocityCommand.resize(2);
   _jointVelocityCommandExecuted.resize(2);
   _wheelNames[LEFT] = info.hardware_parameters.at("left_wheel_name");
@@ -33,7 +34,7 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
     // DiffBotSystem has exactly two states and one command interface on each
     // joint
     if (joint.command_interfaces.size() != 1) {
-      RCLCPP_ERROR(rclcpp::get_logger("DiffDriveArduinoHardware"),
+      RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),
                    "Joint '%s' has %zu command interfaces found. 1 expected.",
                    joint.name.c_str(), joint.command_interfaces.size());
       return hardware_interface::CallbackReturn::ERROR;
@@ -42,7 +43,7 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
     if (joint.command_interfaces[0].name !=
         hardware_interface::HW_IF_VELOCITY) {
       RCLCPP_ERROR(
-          rclcpp::get_logger("DiffDriveArduinoHardware"),
+          rclcpp::get_logger("DiffDriveInterface"),
           "Joint '%s' have %s command interfaces found. '%s' expected.",
           joint.name.c_str(), joint.command_interfaces[0].name.c_str(),
           hardware_interface::HW_IF_VELOCITY);
@@ -50,7 +51,7 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
     }
 
     if (joint.state_interfaces.size() != 2) {
-      RCLCPP_ERROR(rclcpp::get_logger("DiffDriveArduinoHardware"),
+      RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),
                    "Joint '%s' has %zu state interface. 2 expected.",
                    joint.name.c_str(), joint.state_interfaces.size());
       return hardware_interface::CallbackReturn::ERROR;
@@ -58,7 +59,7 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
 
     if (joint.state_interfaces[0].name != hardware_interface::HW_IF_POSITION) {
       RCLCPP_ERROR(
-          rclcpp::get_logger("DiffDriveArduinoHardware"),
+          rclcpp::get_logger("DiffDriveInterface"),
           "Joint '%s' have '%s' as first state interface. '%s' expected.",
           joint.name.c_str(), joint.state_interfaces[0].name.c_str(),
           hardware_interface::HW_IF_POSITION);
@@ -67,7 +68,7 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
 
     if (joint.state_interfaces[1].name != hardware_interface::HW_IF_VELOCITY) {
       RCLCPP_ERROR(
-          rclcpp::get_logger("DiffDriveArduinoHardware"),
+          rclcpp::get_logger("DiffDriveInterface"),
           "Joint '%s' have '%s' as second state interface. '%s' expected.",
           joint.name.c_str(), joint.state_interfaces[1].name.c_str(),
           hardware_interface::HW_IF_VELOCITY);
@@ -115,14 +116,14 @@ DifferentialDriveSerialInterface::export_command_interfaces() {
 hardware_interface::CallbackReturn
 DifferentialDriveSerialInterface::on_configure(
     const rclcpp_lifecycle::State & /*previous_state*/) {
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Configuring ...please wait...");
   _port->Close();
   _port->SetDevice(_deviceName);
   _port->SetBaudRate(mn::CppLinuxSerial::BaudRate::B_9600);
   _port->SetTimeout(10);
   _port->Open();
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully configured!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -130,11 +131,11 @@ DifferentialDriveSerialInterface::on_configure(
 
 hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_cleanup(
     const rclcpp_lifecycle::State & /*previous_state*/) {
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Cleaning up ...please wait...");
   _port->Close();
 
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully cleaned up!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -143,13 +144,13 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_cleanup(
 hardware_interface::CallbackReturn
 DifferentialDriveSerialInterface::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Activating ...please wait...");
   if (!_port->isOpen()) {
     return hardware_interface::CallbackReturn::ERROR;
   }
   // TODO: configuration message
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully activated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -158,9 +159,9 @@ DifferentialDriveSerialInterface::on_activate(
 hardware_interface::CallbackReturn
 DifferentialDriveSerialInterface::on_deactivate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Deactivating ...please wait...");
-  RCLCPP_INFO(rclcpp::get_logger("DiffDriveArduinoHardware"),
+  RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully deactivated!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
@@ -175,21 +176,23 @@ DifferentialDriveSerialInterface::read(const rclcpp::Time & /*time*/,
   try {
     _serial.parse(1, _port);
 
+    if (!_serial._messagesState.empty()) {
+      auto msg = _serial._messagesState.back();
+      _jointVelocity[LEFT] = msg->_stateLeft.angularVelocity;
+      _jointVelocity[RIGHT] = msg->_stateRight.angularVelocity;
+      _jointPosition[LEFT] = msg->_stateLeft.position;
+      _jointPosition[RIGHT] = msg->_stateRight.position;
+      _jointVelocityCommandExecuted[LEFT] = msg->_stateLeft.angularVelocityCmd;
+      _jointVelocityCommandExecuted[RIGHT] =
+          msg->_stateRight.angularVelocityCmd;
+    }
+
   } catch (const SerialProtocol::ParseError &e) {
-    RCLCPP_ERROR(rclcpp::get_logger("DiffDriveArduinoHardware"),
+    RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),
                  "SerialProtocol::ParserError:: %s [%s]", e.what(),
                  e._parsedMessage.c_str());
   }
-  if (!_serial._messagesState.empty()) {
-    std::shared_ptr<const SerialProtocol::MsgState> msg =
-        _serial._messagesState[_serial._messagesState.size() - 1];
-    _jointVelocity[LEFT] = msg->_stateLeft.angularVelocity;
-    _jointVelocity[RIGHT] = msg->_stateRight.angularVelocity;
-    _jointPosition[LEFT] = msg->_stateLeft.position;
-    _jointPosition[RIGHT] = msg->_stateRight.position;
-    _jointVelocityCommandExecuted[LEFT] = msg->_stateLeft.angularVelocityCmd;
-    _jointVelocityCommandExecuted[RIGHT] = msg->_stateRight.angularVelocityCmd;
-  }
+
   _serial.clear();
   return hardware_interface::return_type::OK;
 }
