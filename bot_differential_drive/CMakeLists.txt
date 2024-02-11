@@ -55,7 +55,10 @@ install(
 
 
 if(BUILD_TESTING)
-  add_executable(test_serial test/test_serial.cpp src/SerialProtocol.h src/SerialProtocol.cpp src/SerialPort.hpp src/SerialPort.cpp)
+  add_executable(test_control test/test_control.cpp)
+  target_link_libraries(test_control ${PROJECT_NAME})
+  add_executable(test_query test/test_query.cpp)
+  target_link_libraries(test_query ${PROJECT_NAME})
 
     if(BUILD_LINTING)
         find_package(ament_lint_auto REQUIRED)
