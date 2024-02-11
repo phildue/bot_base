@@ -565,5 +565,14 @@ int SerialPort::Read(std::stringstream &data, int nBytes) {
   // If code reaches here, read must of been successful
 }
 
+std::string SerialPort::ReadUntil(char delimiter, int maxBytes) {
+  int nBytes = 0;
+  std::stringstream buffer;
+  do {
+    nBytes = Read(buffer, 1);
+  } while (buffer.str().back() != delimiter && nBytes > 0 && nBytes < maxBytes);
+  return buffer.str();
+}
+
 } // namespace CppLinuxSerial
 } // namespace mn

@@ -4,20 +4,19 @@
 
 #include "SerialProtocol.h"
 #include <algorithm>
-
-SerialProtocol::MsgType
-SerialProtocol::Message::msgType(const std::string &str) {
-  if (str == "S") {
+namespace serial_protocol {
+MsgType parseType(const std::string &raw) {
+  auto t = raw.substr(0, 1);
+  if (t == "S") {
     return MsgType::STATE;
   }
-  if (str == "v") {
+  if (t == "v") {
     return MsgType::CMD_VEL;
   }
   return MsgType::UNKNOWN;
 }
 
-std::string
-SerialProtocol::Message::to_string(SerialProtocol::MsgType msgType) {
+std::string to_string(MsgType msgType) {
   switch (msgType) {
   case MsgType ::CMD_VEL:
     return "v";
@@ -30,31 +29,31 @@ SerialProtocol::Message::to_string(SerialProtocol::MsgType msgType) {
   }
 }
 
-SerialProtocol::Message::Message(const std::string &msg) : _str(msg) {
+Message::Message(const std::string &msg) : _str(msg) {
   _fields = split(msg, ' ');
-  _type = msgType(_fields[0]);
+  _type = parseType(msg);
   _t = std::stoull(_fields[1]);
 }
 
-SerialProtocol::Message::Message(SerialProtocol::MsgType type, uint64_t t)
+Message::Message(serial_protocol::MsgType type, uint64_t t)
     : _t(t), _type(type) {
   std::stringstream ss;
   ss << to_string(_type) << " " << t << "\n";
   _str = ss.str();
 }
 
-SerialProtocol::MsgCmdVel::MsgCmdVel(const std::string &raw) : Message(raw) {
+MsgCmdVel::MsgCmdVel(const std::string &raw) : Message(raw) {
   _vl = std::stod(_fields[2]);
   _vr = std::stod(_fields[3]);
 }
-SerialProtocol::MsgCmdVel::MsgCmdVel(float vl, float vr, uint64_t t)
+MsgCmdVel::MsgCmdVel(float vl, float vr, uint64_t t)
     : Message(MsgType::CMD_VEL, t), _vl(vl), _vr(vr) {
   std::stringstream ss;
   ss << to_string(_type) << " " << t << " " << vl << " " << vr << "\n";
   _str = ss.str();
 }
 
-SerialProtocol::MsgState::MsgState(const std::string &raw) : Message(raw) {
+MsgState::MsgState(const std::string &raw) : Message(raw) {
   _stateLeft.position = std::stof(_fields[2]);
   _stateLeft.angularVelocityCmd = std::stof(_fields[3]);
   _stateLeft.angularVelocity = std::stof(_fields[4]);
@@ -67,8 +66,7 @@ SerialProtocol::MsgState::MsgState(const std::string &raw) : Message(raw) {
   _stateRight.err = std::stof(_fields[10]);
   _stateRight.dutySet = std::stof(_fields[11]);
 }
-SerialProtocol::MsgState::MsgState(const State &stateLeft,
-                                   const State &stateRight, uint64_t t)
+MsgState::MsgState(const State &stateLeft, const State &stateRight, uint64_t t)
     : _stateLeft(stateLeft), _stateRight(stateRight),
       Message(MsgType::STATE, t) {
   std::stringstream ss;
@@ -80,7 +78,7 @@ SerialProtocol::MsgState::MsgState(const State &stateLeft,
   ss << "\n";
   _str = ss.str();
 }
-std::string SerialProtocol::MsgState::str() const {
+std::string MsgState::str() const {
   std::stringstream ss;
   ss.precision(4);
   ss << "       |" << std::setw(6) << "L"
@@ -100,46 +98,14 @@ std::string SerialProtocol::MsgState::str() const {
   return ss.str();
 }
 
-SerialProtocol::MsgQueryState::MsgQueryState(uint64_t t)
-    : Message(MsgType::Q_STATE, t) {
+MsgQueryState::MsgQueryState(uint64_t t) : Message(MsgType::Q_STATE, t) {
   std::stringstream ss;
   ss << to_string(_type) << " " << t << " s"
      << "\n";
   _str = ss.str();
 }
 
-void SerialProtocol::parse(int nMessages, std::shared_ptr<SerialPort> port) {
-  int nBytes = 0;
-  int readMessages = 0;
-  do {
-    nBytes = port->Read(_buffer, 1);
-    if (_buffer.str().back() == '\n') {
-      auto raw = _buffer.str();
-      try {
-        auto msgType = Message::msgType(raw.substr(0, 1));
-        switch (msgType) {
-        case MsgType::STATE:
-          messagesState.push_back(std::make_shared<MsgState>(raw));
-          break;
-        case MsgType::CMD_VEL:
-          messagesCmdVel.push_back(std::make_shared<MsgCmdVel>(raw));
-          break;
-        default:
-          messages.push_back(std::make_shared<Message>(raw));
-        }
-
-        _buffer = std::stringstream();
-        readMessages++;
-      } catch (const std::exception &e) {
-        _buffer = std::stringstream();
-        throw ParseError(e.what(), raw);
-      }
-    }
-  } while (nBytes > 0 && readMessages < nMessages);
-}
-
-std::vector<std::string> SerialProtocol::split(const std::string &s,
-                                               char delimiter) {
+std::vector<std::string> split(const std::string &s, char delimiter) {
   std::vector<std::string> tokens;
   std::string token;
   std::istringstream tokenStream(s);
@@ -148,9 +114,4 @@ std::vector<std::string> SerialProtocol::split(const std::string &s,
   }
   return tokens;
 }
-
-void SerialProtocol::clear() {
-  messages.clear();
-  messagesState.clear();
-  messagesCmdVel.clear();
-}
+} // namespace serial_protocol

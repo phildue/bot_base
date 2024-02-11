@@ -138,6 +138,7 @@ public:
 
   int Read(std::stringstream &data, int nBytes);
   bool isOpen() const { return state_ == State::OPEN; }
+  std::string ReadUntil(char delimiter = '\n', int maxBytes = 100);
 
 private:
   /// \brief		Returns a populated termios structure for the passed in

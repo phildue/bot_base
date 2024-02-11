@@ -64,8 +64,8 @@ public:
   static constexpr int RIGHT = 1;
 
 protected:
-  SerialProtocol _serial;
   std::string _deviceName;
+  int _timeout;
   std::vector<double> _jointEffort, _jointPosition, _jointVelocity;
   std::vector<double> _jointVelocityCommand, _jointVelocityCommandExecuted;
   int _numJoints;

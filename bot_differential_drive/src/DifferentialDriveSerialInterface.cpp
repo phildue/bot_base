@@ -24,10 +24,10 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
   _wheelNames[RIGHT] = info.hardware_parameters.at("right_wheel_name");
   _loopHz = std::stof(info.hardware_parameters.at("loop_rate"));
   _deviceName = info.hardware_parameters.at("device_name");
-  _port = std::make_shared<SerialPort>();
-  _port->SetDevice(_deviceName);
-  _port->SetBaudRate(mn::CppLinuxSerial::BaudRate::B_9600);
-  _port->SetTimeout(10);
+  _timeout = std::stoi(info.hardware_parameters.at("timeout_ms"));
+  _port = std::make_shared<SerialPort>(_deviceName,
+                                       mn::CppLinuxSerial::BaudRate::B_9600);
+  _port->SetTimeout(_timeout);
   _port->Open();
 
   for (const hardware_interface::ComponentInfo &joint : info.joints) {
@@ -121,7 +121,7 @@ DifferentialDriveSerialInterface::on_configure(
   _port->Close();
   _port->SetDevice(_deviceName);
   _port->SetBaudRate(mn::CppLinuxSerial::BaudRate::B_9600);
-  _port->SetTimeout(10);
+  _port->SetTimeout(_timeout);
   _port->Open();
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully configured!");
@@ -173,29 +173,24 @@ DifferentialDriveSerialInterface::read(const rclcpp::Time & /*time*/,
   if (!_port->isOpen()) {
     return hardware_interface::return_type::ERROR;
   }
-  try {
-    _port->Write(
-        std::make_shared<SerialProtocol::MsgQueryState>(0)->serialStr());
-    _serial.parse(1, _port);
+  _port->Write(serial_protocol::MsgQueryState(0).serialStr());
+  auto raw = _port->ReadUntil('\n', 100);
 
-    if (!_serial.messagesState.empty()) {
-      auto msg = _serial.messagesState.back();
-      _jointVelocity[LEFT] = msg->_stateLeft.angularVelocity;
-      _jointVelocity[RIGHT] = msg->_stateRight.angularVelocity;
-      _jointPosition[LEFT] = msg->_stateLeft.position;
-      _jointPosition[RIGHT] = msg->_stateRight.position;
-      _jointVelocityCommandExecuted[LEFT] = msg->_stateLeft.angularVelocityCmd;
-      _jointVelocityCommandExecuted[RIGHT] =
-          msg->_stateRight.angularVelocityCmd;
-    }
+  if (serial_protocol::parseType(raw) == serial_protocol::MsgType::STATE) {
 
-  } catch (const SerialProtocol::ParseError &e) {
+    serial_protocol::MsgState msg{raw};
+    _jointVelocity[LEFT] = msg._stateLeft.angularVelocity;
+    _jointVelocity[RIGHT] = msg._stateRight.angularVelocity;
+    _jointPosition[LEFT] = msg._stateLeft.position;
+    _jointPosition[RIGHT] = msg._stateRight.position;
+    _jointVelocityCommandExecuted[LEFT] = msg._stateLeft.angularVelocityCmd;
+    _jointVelocityCommandExecuted[RIGHT] = msg._stateRight.angularVelocityCmd;
+
+  } else {
     RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),
-                 "SerialProtocol::ParserError:: %s [%s]", e.what(),
-                 e._parsedMessage.c_str());
+                 "Could not read state from serial port. Received: %s ",
+                 raw.c_str());
   }
-
-  _serial.clear();
   return hardware_interface::return_type::OK;
 }
 
@@ -206,10 +201,9 @@ DifferentialDriveSerialInterface::write(const rclcpp::Time & /*time*/,
     return hardware_interface::return_type::ERROR;
   }
   if (_jointVelocityCommand[LEFT] != 0 || _jointVelocityCommand[RIGHT] != 0) {
-    _port->Write(
-        std::make_shared<SerialProtocol::MsgCmdVel>(
-            _jointVelocityCommand[LEFT], _jointVelocityCommand[RIGHT], 0)
-            ->serialStr());
+    _port->Write(serial_protocol::MsgCmdVel(_jointVelocityCommand[LEFT],
+                                            _jointVelocityCommand[RIGHT], 0)
+                     .serialStr());
   }
   return hardware_interface::return_type::OK;
 }
