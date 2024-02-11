@@ -176,15 +176,23 @@ DifferentialDriveSerialInterface::read(const rclcpp::Time & /*time*/,
   _port->Write(serial_protocol::MsgQueryState(0).serialStr());
   auto raw = _port->ReadUntil('\n', 100);
 
-  if (serial_protocol::parseType(raw) == serial_protocol::MsgType::STATE) {
-
-    serial_protocol::MsgState msg{raw};
-    _jointVelocity[LEFT] = msg._stateLeft.angularVelocity;
-    _jointVelocity[RIGHT] = msg._stateRight.angularVelocity;
-    _jointPosition[LEFT] = msg._stateLeft.position;
-    _jointPosition[RIGHT] = msg._stateRight.position;
-    _jointVelocityCommandExecuted[LEFT] = msg._stateLeft.angularVelocityCmd;
-    _jointVelocityCommandExecuted[RIGHT] = msg._stateRight.angularVelocityCmd;
+  if (!raw.empty() &&
+      serial_protocol::parseType(raw) == serial_protocol::MsgType::STATE) {
+    try {
+      serial_protocol::MsgState msg{raw};
+      _jointVelocity[LEFT] = msg._stateLeft.angularVelocity;
+      _jointVelocity[RIGHT] = msg._stateRight.angularVelocity;
+      _jointPosition[LEFT] = msg._stateLeft.position;
+      _jointPosition[RIGHT] = msg._stateRight.position;
+      _jointVelocityCommandExecuted[LEFT] = msg._stateLeft.angularVelocityCmd;
+      _jointVelocityCommandExecuted[RIGHT] = msg._stateRight.angularVelocityCmd;
+      RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
+                  "Received STATE: \n%s ", msg.str().c_str());
+    } catch (const std::exception &e) {
+      RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),
+                   "Error during reading from serial port. Received: %s ",
+                   raw.c_str());
+    }
 
   } else {
     RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),

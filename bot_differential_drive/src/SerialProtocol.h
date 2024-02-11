@@ -17,7 +17,7 @@ using namespace mn::CppLinuxSerial;
 #include <string>
 #include <thread>
 namespace serial_protocol {
-enum class MsgType { UNKNOWN, CMD_VEL, STATE, Q_STATE };
+enum class MsgType { UNKNOWN, CMD_VEL, STATE, QUERY, INFO };
 MsgType parseType(const std::string &str);
 std::string to_string(MsgType msgType);
 

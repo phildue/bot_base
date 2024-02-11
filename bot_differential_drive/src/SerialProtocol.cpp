@@ -13,6 +13,12 @@ MsgType parseType(const std::string &raw) {
   if (t == "v") {
     return MsgType::CMD_VEL;
   }
+  if (t == "I") {
+    return MsgType::INFO;
+  }
+  if (t == "Q") {
+    return MsgType::QUERY;
+  }
   return MsgType::UNKNOWN;
 }
 
@@ -22,8 +28,10 @@ std::string to_string(MsgType msgType) {
     return "v";
   case MsgType ::STATE:
     return "S";
-  case MsgType ::Q_STATE:
+  case MsgType ::QUERY:
     return "Q";
+  case MsgType ::INFO:
+    return "I";
   default:
     return "";
   }
@@ -54,6 +62,10 @@ MsgCmdVel::MsgCmdVel(float vl, float vr, uint64_t t)
 }
 
 MsgState::MsgState(const std::string &raw) : Message(raw) {
+
+  if (_fields.size() <= 11) {
+    throw std::invalid_argument("Parse error for state message: " + raw);
+  }
   _stateLeft.position = std::stof(_fields[2]);
   _stateLeft.angularVelocityCmd = std::stof(_fields[3]);
   _stateLeft.angularVelocity = std::stof(_fields[4]);
@@ -98,9 +110,9 @@ std::string MsgState::str() const {
   return ss.str();
 }
 
-MsgQueryState::MsgQueryState(uint64_t t) : Message(MsgType::Q_STATE, t) {
+MsgQueryState::MsgQueryState(uint64_t t) : Message(MsgType::QUERY, t) {
   std::stringstream ss;
-  ss << to_string(_type) << " " << t << " s"
+  ss << to_string(MsgType::QUERY) << " " << t << " s"
      << "\n";
   _str = ss.str();
 }
