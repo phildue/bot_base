@@ -17,44 +17,47 @@ using namespace mn::CppLinuxSerial;
 #include <string>
 #include <thread>
 namespace serial_protocol {
-enum class MsgType { UNKNOWN, CMD_VEL, STATE, QUERY, INFO };
-MsgType parseType(const std::string &str);
-std::string to_string(MsgType msgType);
+enum class MsgType { UNKNOWN = 0, SETPOINT, STATE, QUERY, INFO };
+constexpr std::array MsgTypeToString = {"unknown", "set", "state", "query",
+                                        "info"};
 
-struct Message {
-public:
-  Message(const std::string &msg);
-  Message(MsgType type, uint64_t t);
-  const std::string &serialStr() const { return _str; };
-  const MsgType &type() const { return _type; };
-  const uint64_t &t() const { return _t; }
-  virtual std::string str() const { return _str; }
+enum class MsgTypeSetPoint { DUTY_CYCLE = 0, VELOCITY, RESET, CONFIG };
+constexpr std::array MsgTypeSetPointToString = {"duty", "vel", "rst", "cfg"};
 
-protected:
-  std::string _str;
-  MsgType _type;
-  uint64_t _t;
-  std::vector<std::string> _fields;
+enum class MsgTypeQuery {
+  VELOCITY = 0,
+  POSITION,
+  VELOCITY_AND_POSITION,
+  CONFIG
 };
-struct MsgCmdVel : public Message {
+constexpr std::array MsgTypeQueryToString = {"vel", "pos", "vap", "cfg"};
+
+enum class MsgTypeState {
+  VELOCITY = 0,
+  POSITION,
+  VELOCITY_AND_POSITION,
+  CONFIG
+};
+constexpr std::array MsgTypeState = {"vel", "pos", "vap", "cfg"};
+
+MsgType parseType(const std::string &raw);
+
+struct MsgCmdVel {
   float _vl, _vr;
-
-  MsgCmdVel(const std::string &raw);
+  std::uint64_t _t;
   MsgCmdVel(float vl, float vr, uint64_t t);
+  std::string strSerial() const;
 };
 
-struct State {
-  float angularVelocityCmd, angularVelocity, position, err, dutySet;
-};
-struct MsgState : public Message {
-  State _stateLeft, _stateRight;
-  MsgState(const std::string &raw);
-  MsgState(const State &stateLeft, const State &stateRight, uint64_t t);
-  std::string str() const override;
+struct MsgStateVelocityAndPosition {
+  float _vl, _vr, _pl, _pr;
+  std::uint64_t _t;
+  MsgStateVelocityAndPosition(const std::string &raw);
+  std::string str() const;
 };
 
-struct MsgQueryState : public Message {
-  MsgQueryState(uint64_t t);
+struct MsgQueryState {
+  std::string strSerial() const;
 };
 
 static std::vector<std::string> split(const std::string &s, char delimiter);

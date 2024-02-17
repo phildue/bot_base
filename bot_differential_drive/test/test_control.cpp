@@ -12,7 +12,7 @@ using namespace mn::CppLinuxSerial;
 #include "SerialProtocol.h"
 
 int main() {
-  auto port = std::make_shared<SerialPort>("/dev/ttyACM1", BaudRate::B_9600);
+  auto port = std::make_shared<SerialPort>("/dev/ttyACM0", BaudRate::B_9600);
   port->SetTimeout(100); // Block when reading until any data is received
   port->Open();
 
@@ -25,17 +25,23 @@ int main() {
     }
     serial_protocol::MsgCmdVel setPointMsg{setPoint, -1 * setPoint,
                                            (uint64_t)i};
-    std::cout << "Sending:\n" << setPointMsg.str() << std::endl;
-    port->Write(setPointMsg.serialStr());
+    std::cout << "Sending:\n" << setPointMsg.strSerial() << std::endl;
+    port->Write(setPointMsg.strSerial());
 
-    serial_protocol::MsgQueryState queryState{(uint64_t)i};
-    std::cout << "Sending:\n" << queryState.str() << std::endl;
-    port->Write(queryState.serialStr());
+    serial_protocol::MsgQueryState queryState{};
+    std::cout << "Sending:\n" << queryState.strSerial() << std::endl;
+    port->Write(queryState.strSerial());
 
     auto raw = port->ReadUntil('\n', 100);
     if (serial_protocol::parseType(raw) == serial_protocol::MsgType::STATE) {
-      serial_protocol::MsgState state{raw};
-      std::cout << "Received:\n" << state.str() << std::endl;
+      try {
+        serial_protocol::MsgStateVelocityAndPosition state{raw};
+        std::cout << "Received:\n"
+                  << " vl=" << state._vl << " vr=" << state._vr << std::endl;
+      } catch (const std::runtime_error &e) {
+        std::cerr << e.what() << std::endl;
+      }
+
     } else {
       std::cerr << "Error! Received:\n" << raw << std::endl;
     }

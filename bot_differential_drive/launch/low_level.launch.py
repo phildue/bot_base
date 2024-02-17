@@ -15,22 +15,33 @@
 from launch import LaunchDescription
 from launch.actions import RegisterEventHandler
 from launch.event_handlers import OnProcessExit
-from launch.substitutions import Command, FindExecutable, PathJoinSubstitution
+from launch.substitutions import Command, FindExecutable, PathJoinSubstitution,LaunchConfiguration
 
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
+from launch.actions import DeclareLaunchArgument, RegisterEventHandler
 
 
 def generate_launch_description():
+    arg_mock = DeclareLaunchArgument(
+            "use_mock_hardware",
+            default_value='false',
+            description="Start robot with mock hardware mirroring command to its states.",
+        )
+    use_mock_hardware = LaunchConfiguration("use_mock_hardware")
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution(
-                [FindPackageShare("bot_differential_drive"), "description", "bot_differential_drive.urdf.xacro"]
+                [FindPackageShare("bot_description"), "urdf", "bot.urdf.xacro"]
             ),
+            " ",
+            "use_mock_hardware:=",
+            use_mock_hardware,
         ]
     )
+    
     robot_description = {"robot_description": robot_description_content}
 
     robot_controllers = PathJoinSubstitution(
@@ -53,7 +64,7 @@ def generate_launch_description():
         output="both",
         parameters=[robot_description],
         remappings=[
-            ("/diff_drive_controller/cmd_vel_unstamped", "/cmd_vel"),
+            ("/bot_base_controller/cmd_vel_unstamped", "/cmd_vel"),
         ],
     )
 
@@ -78,6 +89,7 @@ def generate_launch_description():
     )
 
     nodes = [
+        arg_mock,
         control_node,
         robot_state_pub_node,
         joint_state_broadcaster_spawner,

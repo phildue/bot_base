@@ -12,6 +12,7 @@ include_directories(
 )
 add_library(${PROJECT_NAME} SHARED 
   src/DifferentialDriveSerialInterface.h
+  src/DifferentialDriveMock.cpp
   src/DifferentialDriveSerialInterface.cpp
   src/SerialProtocol.h
   src/SerialProtocol.cpp

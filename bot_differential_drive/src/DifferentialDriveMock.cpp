@@ -2,13 +2,13 @@
 // Created by phil on 22.03.20.
 //
 
-#include "DifferentialDriveSerialInterface.h"
+#include "DifferentialDriveMock.h"
 #include "hardware_interface/types/hardware_interface_type_values.hpp"
 #include <chrono>
 namespace bot_differential_drive {
 
-hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
-    const hardware_interface::HardwareInfo &info) {
+hardware_interface::CallbackReturn
+DifferentialDriveMock::on_init(const hardware_interface::HardwareInfo &info) {
 
   if (hardware_interface::SystemInterface::on_init(info) !=
       hardware_interface::CallbackReturn::SUCCESS) {
@@ -25,10 +25,6 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
   _loopHz = std::stof(info.hardware_parameters.at("loop_rate"));
   _deviceName = info.hardware_parameters.at("device_name");
   _timeout = std::stoi(info.hardware_parameters.at("timeout_ms"));
-  _port = std::make_shared<SerialPort>(_deviceName,
-                                       mn::CppLinuxSerial::BaudRate::B_9600);
-  _port->SetTimeout(_timeout);
-  _port->Open();
 
   for (const hardware_interface::ComponentInfo &joint : info.joints) {
     // DiffBotSystem has exactly two states and one command interface on each
@@ -78,7 +74,7 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_init(
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 std::vector<hardware_interface::StateInterface>
-DifferentialDriveSerialInterface::export_state_interfaces() {
+DifferentialDriveMock::export_state_interfaces() {
   std::vector<hardware_interface::StateInterface> state_interfaces;
 
   state_interfaces.emplace_back(hardware_interface::StateInterface(
@@ -99,7 +95,7 @@ DifferentialDriveSerialInterface::export_state_interfaces() {
 }
 
 std::vector<hardware_interface::CommandInterface>
-DifferentialDriveSerialInterface::export_command_interfaces() {
+DifferentialDriveMock::export_command_interfaces() {
   std::vector<hardware_interface::CommandInterface> command_interfaces;
 
   command_interfaces.emplace_back(hardware_interface::CommandInterface(
@@ -113,27 +109,20 @@ DifferentialDriveSerialInterface::export_command_interfaces() {
   return command_interfaces;
 }
 
-hardware_interface::CallbackReturn
-DifferentialDriveSerialInterface::on_configure(
+hardware_interface::CallbackReturn DifferentialDriveMock::on_configure(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Configuring ...please wait...");
-  _port->Close();
-  _port->SetDevice(_deviceName);
-  _port->SetBaudRate(mn::CppLinuxSerial::BaudRate::B_9600);
-  _port->SetTimeout(_timeout);
-  _port->Open();
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully configured!");
 
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_cleanup(
+hardware_interface::CallbackReturn DifferentialDriveMock::on_cleanup(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Cleaning up ...please wait...");
-  _port->Close();
 
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully cleaned up!");
@@ -141,14 +130,10 @@ hardware_interface::CallbackReturn DifferentialDriveSerialInterface::on_cleanup(
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn
-DifferentialDriveSerialInterface::on_activate(
+hardware_interface::CallbackReturn DifferentialDriveMock::on_activate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Activating ...please wait...");
-  if (!_port->isOpen()) {
-    return hardware_interface::CallbackReturn::ERROR;
-  }
   // TODO: configuration message
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Successfully activated!");
@@ -156,8 +141,7 @@ DifferentialDriveSerialInterface::on_activate(
   return hardware_interface::CallbackReturn::SUCCESS;
 }
 
-hardware_interface::CallbackReturn
-DifferentialDriveSerialInterface::on_deactivate(
+hardware_interface::CallbackReturn DifferentialDriveMock::on_deactivate(
     const rclcpp_lifecycle::State & /*previous_state*/) {
   RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
               "Deactivating ...please wait...");
@@ -168,52 +152,28 @@ DifferentialDriveSerialInterface::on_deactivate(
 }
 
 hardware_interface::return_type
-DifferentialDriveSerialInterface::read(const rclcpp::Time & /*time*/,
-                                       const rclcpp::Duration &period) {
-  if (!_port->isOpen()) {
-    return hardware_interface::return_type::ERROR;
-  }
-  _port->Write(serial_protocol::MsgQueryState().strSerial());
-  auto raw = _port->ReadUntil('\n', 100);
+DifferentialDriveMock::read(const rclcpp::Time & /*time*/,
+                            const rclcpp::Duration &period) {
 
-  if (!raw.empty() &&
-      serial_protocol::parseType(raw) == serial_protocol::MsgType::STATE) {
-    try {
-      serial_protocol::MsgStateVelocityAndPosition msg{raw};
-      _jointVelocity[LEFT] = msg._vl;
-      _jointVelocity[RIGHT] = msg._vr;
-      _jointPosition[LEFT] = msg._pl;
-      _jointPosition[RIGHT] = msg._pr;
-      RCLCPP_INFO(rclcpp::get_logger("DiffDriveInterface"),
-                  "Received STATE: \n%s ", msg.str().c_str());
-    } catch (const std::exception &e) {
-      RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),
-                   "Error during reading from serial port. Received: %s ",
-                   raw.c_str());
-    }
-
-  } else {
-    RCLCPP_ERROR(rclcpp::get_logger("DiffDriveInterface"),
-                 "Could not read state from serial port. Received: %s ",
-                 raw.c_str());
-  }
+  auto clock = rclcpp::Clock();
+  RCLCPP_INFO_THROTTLE(rclcpp::get_logger("DiffDriveInterface"), clock, 5000,
+                       serial_protocol::MsgQueryState().strSerial().c_str());
   return hardware_interface::return_type::OK;
 }
 
 hardware_interface::return_type
-DifferentialDriveSerialInterface::write(const rclcpp::Time & /*time*/,
-                                        const rclcpp::Duration & /*period*/) {
-  if (!_port->isOpen()) {
-    return hardware_interface::return_type::ERROR;
-  }
-  if (_jointVelocityCommand[LEFT] != 0 || _jointVelocityCommand[RIGHT] != 0) {
-    _port->Write(serial_protocol::MsgCmdVel(_jointVelocityCommand[LEFT],
-                                            _jointVelocityCommand[RIGHT], 0)
-                     .strSerial());
-  }
+DifferentialDriveMock::write(const rclcpp::Time & /*time*/,
+                             const rclcpp::Duration & /*period*/) {
+  auto clock = rclcpp::Clock();
+  RCLCPP_INFO_THROTTLE(rclcpp::get_logger("DiffDriveInterface"), clock, 5000,
+                       serial_protocol::MsgCmdVel(_jointVelocityCommand[LEFT],
+                                                  _jointVelocityCommand[RIGHT],
+                                                  0)
+                           .strSerial()
+                           .c_str());
   return hardware_interface::return_type::OK;
 }
 } // namespace bot_differential_drive
 #include "pluginlib/class_list_macros.hpp"
-PLUGINLIB_EXPORT_CLASS(bot_differential_drive::DifferentialDriveSerialInterface,
+PLUGINLIB_EXPORT_CLASS(bot_differential_drive::DifferentialDriveMock,
                        hardware_interface::SystemInterface)
