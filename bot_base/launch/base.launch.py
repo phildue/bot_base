@@ -34,7 +34,7 @@ def generate_launch_description():
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
             PathJoinSubstitution(
-                [FindPackageShare("bot_description"), "urdf", "bot.urdf.xacro"]
+                [FindPackageShare("bot_base"), "urdf", "bot_base.urdf.xacro"]
             ),
             " ",
             "use_mock_hardware:=",
@@ -64,7 +64,7 @@ def generate_launch_description():
         output="both",
         parameters=[robot_description],
         remappings=[
-            ("/bot_base_controller/cmd_vel_unstamped", "/cmd_vel"),
+            ("/bot_base_controller/cmd_vel", "/cmd_vel"),
         ],
     )
 

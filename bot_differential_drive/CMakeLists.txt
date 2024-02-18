@@ -34,10 +34,6 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "BOT_DIFFERENTIAL_DRIVE_BUILD
 pluginlib_export_plugin_description_file(hardware_interface description/bot_differential_drive.xml)
 
 install(DIRECTORY
-    launch
-    DESTINATION share/${PROJECT_NAME}/)
-
-install(DIRECTORY
   config
   DESTINATION share/${PROJECT_NAME}/)
 
