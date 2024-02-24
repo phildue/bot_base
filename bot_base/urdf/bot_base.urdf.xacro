@@ -8,7 +8,11 @@
     <xacro:include filename="globals.urdf.xacro" />
     <xacro:include filename="chassis.urdf.xacro" />
     <xacro:include filename="wheels.urdf.xacro" />
+
     <xacro:include filename="$(find bot_differential_drive)/description/bot_differential_drive.ros2_control.xacro" />
-    <xacro:bot_ros2_control name="Bot" prefix="$(arg prefix)" use_mock_hardware="$(arg use_mock_hardware)" />
+    <xacro:bot_differential_drive_control name="Bot" prefix="$(arg prefix)" use_mock_hardware="$(arg use_mock_hardware)" />
+
 
 </robot>
+
+  
