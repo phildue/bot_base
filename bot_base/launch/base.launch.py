@@ -20,7 +20,7 @@ from launch.substitutions import Command, FindExecutable, PathJoinSubstitution,L
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.actions import DeclareLaunchArgument, RegisterEventHandler
-
+from launch_ros.parameter_descriptions import ParameterValue
 
 def generate_launch_description():
     arg_mock = DeclareLaunchArgument(
@@ -29,56 +29,32 @@ def generate_launch_description():
             description="Start robot with mock hardware mirroring command to its states.",
         )
     use_mock_hardware = LaunchConfiguration("use_mock_hardware")
-    robot_description_content = Command(
-        [
-            PathJoinSubstitution([FindExecutable(name="xacro")]),
-            " ",
-            PathJoinSubstitution(
-                [FindPackageShare("bot_base"), "urdf", "bot_base.urdf.xacro"]
-            ),
-            " ",
-            "use_mock_hardware:=",
-            use_mock_hardware,
-        ]
-    )
+    urdf_path = PathJoinSubstitution([FindPackageShare("bot_base"), "urdf", "bot_base.urdf.xacro"])
+    robot_description_content = ParameterValue(Command(['xacro ', urdf_path," ","use_mock_hardware:=",use_mock_hardware]), value_type=str)
     
-    robot_description = {"robot_description": robot_description_content}
-
-    robot_controllers = PathJoinSubstitution(
-        [
-            FindPackageShare("bot_differential_drive"),
-            "config",
-            "controller.yaml",
-        ]
-    )
-
     control_node = Node(
         package="controller_manager",
         executable="ros2_control_node",
-        parameters=[robot_description, robot_controllers],
-        output="both",
-    )
+        parameters=[{"robot_description": robot_description_content},
+                     PathJoinSubstitution([FindPackageShare("bot_differential_drive"),"config","controller.yaml"])],
+        output="both")
+    
     robot_state_pub_node = Node(
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[robot_description],
-        remappings=[
-            ("/bot_base_controller/cmd_vel", "/cmd_vel"),
-        ],
-    )
+        parameters=[{"robot_description": robot_description_content}],
+        remappings=[("/bot_base_controller/cmd_vel", "/cmd_vel")])
 
     joint_state_broadcaster_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"],
-    )
+        arguments=["joint_state_broadcaster", "--controller-manager", "/controller_manager"])
 
     robot_controller_spawner = Node(
         package="controller_manager",
         executable="spawner",
-        arguments=["bot_base_controller", "--controller-manager", "/controller_manager"],
-    )
+        arguments=["bot_base_controller", "--controller-manager", "/controller_manager"])
 
     # Delay start of robot_controller after `joint_state_broadcaster`
     delay_robot_controller_spawner_after_joint_state_broadcaster_spawner = RegisterEventHandler(

@@ -9,22 +9,8 @@
 
   <xacro:macro name="wheel" params= "prefix X Y Z">
 
-    <joint name="${prefix}_wheel_joint1" type= "fixed">
-      <parent link="${prefix}_wheel"/>
-      <child link= "${prefix}_wheel1"/>
-      <origin xyz="0 0 0" rpy="0 0 0"/>
-    </joint>
 
-    <joint name="${prefix}_wheel_joint" type="continuous">
-      <parent link= "base_link"/>
-      <child link= "${prefix}_wheel"/>
-      <origin xyz= "${0.062*X-0.058*Y} ${(chassis_len/2+0.02)*Z}  0.015" rpy="0 0 0"/>
-      <axis xyz="0 1 0"/>
-      <dynamics damping="0.0" friction="0.0"/>
-    </joint>
-
-
-    <link name= "${prefix}_wheel">
+    <link name="${prefix}_wheel">
       <visual>
         <origin rpy= "${PI/2} 0 0" xyz= "0 0 0"/>
         <geometry>
@@ -41,32 +27,42 @@
       <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius/3}" h="${wheel_width}"/>
     </link>
 
-    <link name= "${prefix}_wheel1">
+    <link name="${prefix}_wheel1">
       <visual>
         <origin rpy= "0  ${PI/2} 0" xyz= "0 0 0"/>
         <geometry>
-          <mesh filename="package://bot_description/meshes/tyre11.dae"/>
+          <mesh filename="package://bot_base/meshes/tyre11.dae"/>
         </geometry>
         <material name= "Black"/>
       </visual>
       <collision>
         <origin rpy= "0 ${PI/2} 0" xyz= "0 0 0"/>
         <geometry>
-          <mesh filename="package://bot_description/meshes/tyre11.dae"/>
+          <mesh filename="package://bot_base/meshes/tyre11.dae"/>
         </geometry>
       </collision>
       <xacro:cylinder_inertia m="${wheel_mass}" r="${wheel_radius}" h="${wheel_width}"/>
     </link>
 
+    <joint name="${prefix}_wheel_joint" type="fixed">
+      <parent link= "base_link"/>
+      <child link="${prefix}_wheel"/>
+      <origin xyz="${0.062*X-0.058*Y} ${(chassis_len/2+0.02)*Z}  0.015" rpy="0 0 0"/>
+      <axis xyz="0 1 0"/>
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
 
+    <joint name="${prefix}_wheel_joint1" type= "fixed">
+      <parent link="${prefix}_wheel"/>
+      <child link="${prefix}_wheel1"/>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+    </joint>
 
 
   </xacro:macro>
 
-  <xacro:wheel prefix="right" X="0" Y="1" Z="-1"/>
-  <xacro:wheel prefix="left" X="0" Y="1" Z="1"/>
-  <!-- <xacro:wheel prefix="right" suffix="front" X="1" Y="1" Z="-1"/>
-     <xacro:wheel prefix="left" suffix="front" X="1" Y="1" Z="1"/>-->
+  <xacro:wheel prefix="right" X="1" Y="1" Z="-1"/>
+  <xacro:wheel prefix="left" X="1" Y="1" Z="1"/>
 
 
 

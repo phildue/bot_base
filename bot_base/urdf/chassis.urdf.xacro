@@ -1,4 +1,4 @@
-<robot name="robopi"
+<robot name="bot"
     xmlns:xacro="http://www.ros.org/wiki/xacro"
     xmlns:xi="http://www.w3.org/2001/XInclude">
 
@@ -10,16 +10,16 @@
         <visual>
             <origin rpy="-${PI/2} 0 ${PI/2}" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="package://bot_description/meshes/base_assembly.dae"/>
+                <mesh filename="package://bot_base/meshes/base_assembly.dae"/>
             </geometry>
         </visual>
         <collision>
             <origin rpy="-${PI/2} 0 0" xyz="0 0 0"/>
             <geometry>
-                <mesh filename="package://bot_description/meshes/base_assembly.dae"/>
+                <mesh filename="package://bot_base/meshes/base_assembly.dae"/>
             </geometry>
         </collision>
-        <xacro:inertial_matrix mass="5.0"/>
+        <!--<xacro:inertial_matrix mass="5.0"/>-->
     </link>
 
     <!--///////////////////////////////////////////////////////////////// -->
